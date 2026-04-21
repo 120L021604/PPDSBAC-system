@@ -9,6 +9,7 @@
       <el-button type="primary" size="large" @click="$router.push('/demo')">🎬 运行完整演示</el-button>
       <el-button size="large" plain @click="$router.push('/setup')">⚙️ 开始初始化</el-button>
       <el-button size="large" plain @click="$router.push('/benchmark')">📊 性能评估</el-button>
+      <el-button size="large" type="warning" plain @click="$router.push('/anim')">✨ 动画展示</el-button>
     </div>
   </div>
 

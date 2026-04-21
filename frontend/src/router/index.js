@@ -5,6 +5,7 @@ import Workflow  from '../views/Workflow.vue'
 import Security  from '../views/Security.vue'
 import Benchmark from '../views/Benchmark.vue'
 import FullDemo  from '../views/FullDemo.vue'
+import AnimDemo  from '../views/AnimDemo.vue'
 
 export default createRouter({
   history: createWebHistory(),
@@ -15,5 +16,6 @@ export default createRouter({
     { path: '/security',  component: Security  },
     { path: '/benchmark', component: Benchmark },
     { path: '/demo',      component: FullDemo  },
+    { path: '/anim',      component: AnimDemo  },
   ]
 })

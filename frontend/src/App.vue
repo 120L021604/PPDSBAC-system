@@ -52,6 +52,7 @@ const nav = [
   { path:'/security',  ico:'🛡️', label:'安全属性'   },
   { path:'/benchmark', ico:'📊', label:'性能评估'   },
   { path:'/demo',      ico:'🎬', label:'完整演示'   },
+  { path:'/anim',      ico:'✨', label:'动画展示'   },
 ]
 </script>
 
