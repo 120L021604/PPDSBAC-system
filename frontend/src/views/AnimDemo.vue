@@ -73,9 +73,11 @@
           <div class="ent-ring r1"></div>
           <div class="ent-ring r2"></div>
           <!-- 图片容器 -->
-          <div class="ent-img-wrap">
+          <div class="ent-img-wrap" :class="{'is-person': e.isPerson}">
             <img :src="e.icon" class="ent-img" :alt="e.name"
                  @error="e=>e.target.src='/icons/placeholder.png'"/>
+            <!-- 白色背景图片的四边渐变遮罩（仅人物类图标）-->
+            <div v-if="e.isPerson" class="ent-img-fade"></div>
             <!-- 活跃时底部光晕 -->
             <div class="ent-glow-bar"></div>
           </div>
@@ -209,14 +211,16 @@ const introFeats = [
 
 // ── 实体列表 ───────────────────────────────────────────────────
 const entities = [
-  { id:'encryptor', icon:ICONS.encryptor, name:'加密者',     sub:'Encryptor', x:7,  y:26, color:'#ffd740' },
-  { id:'db',        icon:ICONS.db,        name:'数据库',     sub:'Database',  x:7,  y:70, color:'#90a4ae' },
-  { id:'ra',        icon:ICONS.ra,        name:'注册机构',   sub:'RA',        x:30, y:13, color:'#4fc3f7' },
-  { id:'user',      icon:ICONS.user,      name:'用 户',      sub:'User',      x:52, y:46, color:'#69f0ae' },
-  { id:'aa1',       icon:ICONS.aa,        name:'授权机构 1', sub:'AA₁',       x:76, y:15, color:'#ce93d8' },
-  { id:'aa2',       icon:ICONS.aa,        name:'授权机构 2', sub:'AA₂',       x:76, y:46, color:'#ce93d8' },
-  { id:'aa3',       icon:ICONS.aa,        name:'授权机构 3', sub:'AA₃',       x:76, y:77, color:'#ce93d8' },
-  { id:'ta',        icon:ICONS.ta,        name:'追踪机构',   sub:'TA',        x:93, y:32, color:'#ff6b6b' },
+  // isPerson:true  → 加边框+渐变遮罩处理白色背景
+  // isPerson:false → 不处理（数据库等非人物图标）
+  { id:'encryptor', icon:ICONS.encryptor, name:'加密者',     sub:'Encryptor', x:7,  y:26, color:'#ffd740', isPerson:true  },
+  { id:'db',        icon:ICONS.db,        name:'数据库',     sub:'Database',  x:7,  y:70, color:'#90a4ae', isPerson:false },
+  { id:'ra',        icon:ICONS.ra,        name:'注册机构',   sub:'RA',        x:30, y:13, color:'#4fc3f7', isPerson:true  },
+  { id:'user',      icon:ICONS.user,      name:'用 户',      sub:'User',      x:52, y:46, color:'#69f0ae', isPerson:true  },
+  { id:'aa1',       icon:ICONS.aa,        name:'授权机构 1', sub:'AA₁',       x:76, y:15, color:'#ce93d8', isPerson:true  },
+  { id:'aa2',       icon:ICONS.aa,        name:'授权机构 2', sub:'AA₂',       x:76, y:46, color:'#ce93d8', isPerson:true  },
+  { id:'aa3',       icon:ICONS.aa,        name:'授权机构 3', sub:'AA₃',       x:76, y:77, color:'#ce93d8', isPerson:true  },
+  { id:'ta',        icon:ICONS.ta,        name:'追踪机构',   sub:'TA',        x:93, y:32, color:'#ff6b6b', isPerson:true  },
 ]
 
 // ── 舞台尺寸 ───────────────────────────────────────────────────
@@ -437,17 +441,20 @@ function act_burst(entId, icons, color, baseLabel) {
 }
 
 function act_aggregate() {
-  const pos = ep('user')
-  const offs = [[-150,-100],[0,-145],[150,-100]]
-  offs.forEach(([ox,oy], i) => {
+  const pos  = ep('user')
+  // K₁/K₂/K₃ 从三个AA的位置飞向user，避免起始点在AA图标下方
+  const aa_srcs = [ep('aa1'), ep('aa2'), ep('aa3')]
+  aa_srcs.forEach((src, i) => {
     const id = ++pid
-    pkts.value.push({ id, x:pos.x+ox-76, y:pos.y+oy-28, icon:ICONS.pkt_key, label:`K${i+1}`, color:'#ce93d8', dur:1400, arrive:false })
+    pkts.value.push({ id, x:src.x-76, y:src.y-28, icon:ICONS.pkt_key, label:`K${i+1}`, color:'#ce93d8', dur:1600, arrive:false })
     T(() => { const p = pkts.value.find(x => x.id===id); if(p){ p.x=pos.x-76; p.y=pos.y-28 } }, 90+i*220)
-    T(() => { const p = pkts.value.find(x => x.id===id); if(p) p.arrive=true; T(() => { pkts.value=pkts.value.filter(x=>x.id!==id) }, 700) }, 1800+i*220)
+    T(() => { const p = pkts.value.find(x => x.id===id); if(p) p.arrive=true; T(() => { pkts.value=pkts.value.filter(x=>x.id!==id) }, 700) }, 1900+i*220)
   })
+  // AK_U 出现在user正上方的空旷区域（不被AA遮挡）
   T(() => {
     const id2 = ++pid
-    pkts.value.push({ id:id2, x:pos.x-76, y:pos.y-100, icon:ICONS.pkt_akey, label:'AK_U 聚合密钥', color:'#ffd740', dur:200, arrive:false })
+    // 出现在user上方、偏左，远离AA区域
+    pkts.value.push({ id:id2, x:pos.x-160, y:pos.y-130, icon:ICONS.pkt_akey, label:'AK_U 聚合密钥', color:'#ffd740', dur:200, arrive:false })
     T(() => { pkts.value = pkts.value.filter(x => x.id!==id2) }, 2800)
   }, 2800)
 }
@@ -642,8 +649,8 @@ onUnmounted(() => {
 }
 /* 光圈 */
 .ent-ring { position:absolute; border-radius:50%; border:2px solid var(--ec); opacity:0; pointer-events:none; }
-.r1 { width:120px; height:120px; top:42%; left:50%; transform:translate(-50%,-50%); }
-.r2 { width:158px; height:158px; top:42%; left:50%; transform:translate(-50%,-50%); }
+.r1 { width:162px; height:162px; top:42%; left:50%; transform:translate(-50%,-50%); }
+.r2 { width:208px; height:208px; top:42%; left:50%; transform:translate(-50%,-50%); }
 .ent-node.active   .r1 { animation:rp 2.4s ease-out infinite; }
 .ent-node.active   .r2 { animation:rp 2.4s ease-out infinite .5s; }
 @keyframes rp { 0%{opacity:.6;transform:translate(-50%,-50%) scale(.75)} 100%{opacity:0;transform:translate(-50%,-50%) scale(1.6)} }
@@ -653,28 +660,45 @@ onUnmounted(() => {
 
 /* 图片容器 */
 .ent-img-wrap {
-  position:relative; width:110px; height:128px;
-  transition:transform .4s, filter .4s;
-  filter:drop-shadow(0 6px 16px rgba(0,0,0,.6));
+  position:relative; width:150px; height:174px;
+  transition:transform .4s, filter .4s, box-shadow .4s;
+  /* 默认圆角裁剪，配合背景色和边框 */
+  border-radius:20px;
+  overflow:hidden;
+}
+/* 人物类图标：加背景色 + 彩色边框，融合白色背景图片 */
+.ent-img-wrap.is-person {
+  background: rgba(8, 20, 40, 0.85);
+  border: 2.5px solid rgba(255,255,255,0.15);
+  box-shadow: 0 4px 20px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.08);
 }
 .ent-img {
-  width:110px; height:128px;
+  width:150px; height:174px;
   object-fit:contain;
   display:block;
 }
+/* 四边渐变遮罩：让白色背景图片和深色容器平滑过渡 */
+.ent-img-fade {
+  position:absolute; inset:0; border-radius:18px;
+  pointer-events:none; z-index:2;
+  /* 四边向内渐变为透明，使图片边缘融入容器背景 */
+  background:
+    linear-gradient(to bottom,  rgba(8,20,40,0.55) 0%, transparent 22%, transparent 75%, rgba(8,20,40,0.7) 100%),
+    linear-gradient(to right,   rgba(8,20,40,0.45) 0%, transparent 18%, transparent 82%, rgba(8,20,40,0.45) 100%);
+}
 /* 底部光晕条（激活时出现） */
 .ent-glow-bar {
-  position:absolute; bottom:-6px; left:50%; transform:translateX(-50%);
-  width:80px; height:12px;
-  background:var(--ec); opacity:0;
-  border-radius:50%; filter:blur(8px);
+  position:absolute; bottom:0; left:0; right:0; height:40px;
+  background: linear-gradient(to top, var(--ec), transparent);
+  opacity:0; z-index:3;
   transition:opacity .4s;
 }
 .ent-node.active .ent-img-wrap {
-  transform:scale(1.1);
-  filter:drop-shadow(0 0 20px var(--ec)) drop-shadow(0 6px 20px rgba(0,0,0,.7));
+  transform:scale(1.08);
+  border-color: var(--ec) !important;
+  box-shadow: 0 0 0 2px var(--ec), 0 0 28px var(--ec)88, 0 6px 24px rgba(0,0,0,0.7) !important;
 }
-.ent-node.active .ent-glow-bar { opacity:.7; }
+.ent-node.active .ent-glow-bar { opacity:.55; }
 
 .ent-label { font-size:16px; font-weight:800; margin-top:10px; color:var(--ec); text-shadow:0 0 14px var(--ec); white-space:nowrap; }
 .ent-sub   { font-size:12px; color:rgba(255,255,255,.3); margin-top:2px; }
@@ -690,14 +714,14 @@ onUnmounted(() => {
   display:flex; align-items:center; gap:10px;
   background:rgba(3,13,26,.94);
   border:2px solid var(--pc,#4fc3f7); border-radius:36px;
-  padding:8px 20px 8px 10px;
+  padding:10px 24px 10px 12px;
   box-shadow:0 0 24px var(--pc,#4fc3f7)55;
   white-space:nowrap; position:relative;
 }
 /* 消息包图片 */
-.pkt-icon-wrap { width:36px; height:36px; flex-shrink:0; display:flex; align-items:center; justify-content:center; }
-.pkt-img       { width:36px; height:36px; object-fit:contain; }
-.pkt-name      { font-size:15px; font-weight:800; color:var(--pc,#4fc3f7); }
+.pkt-icon-wrap { width:52px; height:52px; flex-shrink:0; display:flex; align-items:center; justify-content:center; }
+.pkt-img       { width:52px; height:52px; object-fit:contain; }
+.pkt-name      { font-size:16px; font-weight:800; color:var(--pc,#4fc3f7); }
 .pkt-glow      { position:absolute; inset:-4px; border-radius:40px; background:var(--pc,#4fc3f7); opacity:0; filter:blur(14px); z-index:-1; transition:opacity .3s; }
 .data-pkt.arrive .pkt-body { animation:pa .45s ease-out; box-shadow:0 0 44px var(--pc,#4fc3f7)bb; }
 .data-pkt.arrive .pkt-glow { opacity:.28; animation:glowP .6s ease-out; }
