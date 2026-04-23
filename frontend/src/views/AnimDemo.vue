@@ -65,6 +65,12 @@
       <div class="stage-wrap" ref="stageWrap">
         <canvas class="bg-cv" ref="bgCanvas"></canvas>
         <div class="stage-grid"></div>
+        <!-- 背景光斑（科技感氛围） -->
+        <div class="bg-orbs">
+          <div class="orb orb1"></div>
+          <div class="orb orb2"></div>
+          <div class="orb orb3"></div>
+        </div>
 
         <!-- 实体节点 -->
         <div v-for="e in entities" :key="e.id" class="ent-node"
@@ -138,7 +144,7 @@
           </div>
         </transition>
 
-        <!-- 字幕 -->
+        <!-- 字幕：底部偏左，不遮挡右侧 aa3(x≈76%) -->
         <div class="sub-wrap">
           <transition name="sub-fade" mode="out-in">
             <div class="sub-box" :key="subKey">
@@ -515,21 +521,26 @@ function initP(canvas) {
   const ctx = canvas.getContext('2d')
   const W = canvas.width  = canvas.offsetWidth  || 1400
   const H = canvas.height = canvas.offsetHeight || 760
-  const pts = Array.from({length:80}, () => ({
+  const pts = Array.from({length:110}, () => ({
     x:Math.random()*W, y:Math.random()*H,
-    vx:(Math.random()-.5)*.38, vy:(Math.random()-.5)*.38,
-    r:Math.random()*1.8+.5, alpha:Math.random()*.28+.06
+    vx:(Math.random()-.5)*.42, vy:(Math.random()-.5)*.42,
+    r:Math.random()*2.2+.6,
+    alpha:Math.random()*.5+.15,   // 更亮
+    hue: Math.random() > .7 ? 200 : (Math.random() > .5 ? 180 : 160), // 蓝/青变化
   }))
   function draw() {
     ctx.clearRect(0,0,W,H)
     pts.forEach(p => {
       p.x=(p.x+p.vx+W)%W; p.y=(p.y+p.vy+H)%H
       ctx.beginPath(); ctx.arc(p.x,p.y,p.r,0,Math.PI*2)
-      ctx.fillStyle=`rgba(100,200,255,${p.alpha})`; ctx.fill()
+      ctx.fillStyle=`hsla(${p.hue},90%,75%,${p.alpha})`; ctx.fill()
     })
     for(let i=0;i<pts.length;i++) for(let j=i+1;j<pts.length;j++){
       const dx=pts[i].x-pts[j].x, dy=pts[i].y-pts[j].y, d=Math.sqrt(dx*dx+dy*dy)
-      if(d<95){ ctx.beginPath(); ctx.moveTo(pts[i].x,pts[i].y); ctx.lineTo(pts[j].x,pts[j].y); ctx.strokeStyle=`rgba(100,200,255,${(1-d/95)*.06})`; ctx.stroke() }
+      if(d<110){
+        ctx.beginPath(); ctx.moveTo(pts[i].x,pts[i].y); ctx.lineTo(pts[j].x,pts[j].y)
+        ctx.strokeStyle=`rgba(100,210,255,${(1-d/110)*.12})`; ctx.stroke()
+      }
     }
     paf = requestAnimationFrame(draw)
   }
@@ -564,11 +575,12 @@ onUnmounted(() => {
 <style scoped>
 .anim-root {
   position:fixed; inset:0; z-index:9999;
-  background:#030d1a;
+  /* 亮一级的深蓝底色，可见更多细节 */
+  background: radial-gradient(ellipse at 30% 40%, #0a1f3d 0%, #061428 40%, #020e1e 100%);
   font-family:'PingFang SC','Microsoft YaHei',sans-serif;
   overflow:hidden; color:#fff;
 }
-.bg-cv { position:absolute; inset:0; width:100%; height:100%; pointer-events:none; opacity:.5; }
+.bg-cv { position:absolute; inset:0; width:100%; height:100%; pointer-events:none; opacity:.9; }
 
 /* ══ 开场 ══ */
 .intro-stage { position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:42px; z-index:5; overflow:hidden; }
@@ -638,14 +650,38 @@ onUnmounted(() => {
 
 /* 舞台 */
 .stage-wrap { flex:1; position:relative; overflow:hidden; }
-.stage-grid { position:absolute; inset:0; background-image:linear-gradient(rgba(79,195,247,.028) 1px,transparent 1px),linear-gradient(90deg,rgba(79,195,247,.028) 1px,transparent 1px); background-size:72px 72px; pointer-events:none; }
+.stage-grid {
+  position:absolute; inset:0; pointer-events:none;
+  background-image:
+    /* 细网格 */
+    linear-gradient(rgba(79,195,247,.07) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(79,195,247,.07) 1px, transparent 1px),
+    /* 大网格（更稀疏） */
+    linear-gradient(rgba(79,195,247,.12) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(79,195,247,.12) 1px, transparent 1px);
+  background-size: 60px 60px, 60px 60px, 240px 240px, 240px 240px;
+}
 .link-svg   { position:absolute; inset:0; width:100%; height:100%; pointer-events:none; z-index:2; }
+/* 背景光斑 */
+.bg-orbs { position:absolute; inset:0; pointer-events:none; z-index:0; overflow:hidden; }
+.orb {
+  position:absolute; border-radius:50%;
+  filter:blur(90px); opacity:.12;
+}
+.orb1 { width:520px; height:520px; background:#1a6fa8; top:-100px; left:15%; animation:orbFloat 18s ease-in-out infinite; }
+.orb2 { width:400px; height:400px; background:#3a1a6a; bottom:0px; right:10%;  animation:orbFloat 22s ease-in-out infinite 4s; }
+.orb3 { width:360px; height:360px; background:#0a4a2a; top:20%; left:40%;      animation:orbFloat 26s ease-in-out infinite 8s; }
+@keyframes orbFloat {
+  0%,100% { transform:translate(0,0) scale(1); }
+  33%     { transform:translate(30px,-20px) scale(1.08); }
+  66%     { transform:translate(-20px,25px) scale(.94); }
+}
 
 /* ── 实体节点 ── */
 .ent-node {
   position:absolute; transform:translate(-50%,-50%);
   display:flex; flex-direction:column; align-items:center;
-  z-index:4; pointer-events:none; --ec:#4fc3f7;
+  z-index:5; pointer-events:none; --ec:#4fc3f7;
 }
 /* 光圈 */
 .ent-ring { position:absolute; border-radius:50%; border:2px solid var(--ec); opacity:0; pointer-events:none; }
@@ -737,15 +773,30 @@ onUnmounted(() => {
 .focus-fade-leave-to     { opacity:0; transform:scale(.92); }
 
 /* ── 字幕 ── */
-.sub-wrap { position:absolute; bottom:22px; left:50%; transform:translateX(-50%); width:min(980px,90vw); z-index:10; }
-.sub-box  { background:rgba(3,13,26,.91); backdrop-filter:blur(20px); border:1px solid rgba(79,195,247,.2); border-radius:18px; padding:20px 32px; text-align:center; }
-.sub-step { font-size:13px; font-weight:800; color:#4fc3f7; letter-spacing:2px; text-transform:uppercase; margin-bottom:9px; }
-.sub-text { font-size:17px; color:rgba(255,255,255,.92); line-height:1.8; min-height:60px; }
-.sub-adv  { display:inline-flex; align-items:center; gap:10px; margin-top:14px; background:rgba(105,240,174,.1); border:1px solid rgba(105,240,174,.3); border-radius:28px; padding:6px 22px; font-size:14px; font-weight:700; color:#69f0ae; }
+/* 字幕：底部居中偏左，右边界不超过画面60%，不遮挡aa3(x≈76%) */
+.sub-wrap {
+  position:absolute;
+  bottom:20px;
+  /* left:50% + translateX(-70%) => 视觉中心在画面约 35%，右边界约 58% */
+  left: 50%;
+  transform: translateX(-70%);
+  width: clamp(380px, 52vw, 700px);
+  z-index:10;
+}
+.sub-box {
+  background:rgba(4,16,36,.92); backdrop-filter:blur(24px);
+  border:1px solid rgba(79,195,247,.22);
+  border-radius:14px;
+  padding:16px 22px;
+  text-align:center;
+}
+.sub-step { font-size:11px; font-weight:800; color:#4fc3f7; letter-spacing:2px; text-transform:uppercase; margin-bottom:7px; }
+.sub-text { font-size:15px; color:rgba(255,255,255,.9); line-height:1.75; min-height:0; }
+.sub-adv  { display:inline-flex; align-items:center; gap:8px; margin-top:10px; background:rgba(105,240,174,.08); border:1px solid rgba(105,240,174,.25); border-radius:20px; padding:6px 16px; font-size:13px; font-weight:600; color:#69f0ae; }
 .sub-fade-enter-active,
 .sub-fade-leave-active { transition:opacity .4s, transform .4s; }
-.sub-fade-enter-from   { opacity:0; transform:translateX(-50%) translateY(16px); }
-.sub-fade-leave-to     { opacity:0; transform:translateX(-50%) translateY(-8px); }
+.sub-fade-enter-from   { opacity:0; transform:translateX(-70%) translateY(14px); }
+.sub-fade-leave-to     { opacity:0; transform:translateX(-70%) translateY(-8px); }
 .adv-fade-enter-active,
 .adv-fade-leave-active { transition:opacity .5s; }
 .adv-fade-enter-from,
