@@ -1,7 +1,7 @@
 <template>
 <div>
   <div class="hero">
-    <h1 class="hero-h1">隐私保护去中心化签名访问控制系统</h1>
+    <h1 class="hero-h1">基于签名的隐私保护无中心访问控制系统</h1>
     <p class="hero-en">Privacy-Preserving Decentralized Signature-Based Access Control</p>
     <p class="hero-desc">针对现有去中心化访问控制方案<b>访问权限不可伪造性缺失、服务提供商必须在线、非法用户无法溯源</b>三大问题，
       本方案通过多签名技术、OSBE加密和伪名机制，实现<b>不可链接访问请求、不可伪造可聚合访问权限、非交互式认证和可追踪溯源</b>。</p>
